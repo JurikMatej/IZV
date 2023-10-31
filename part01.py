@@ -2,6 +2,7 @@
 """
 IZV cast1 projektu
 Autor: xjurik12
+Python verze: 3.10
 
 Detailni zadani projektu je v samostatnem projektu e-learningu.
 Nezapomente na to, ze python soubory maji dane formatovani.
