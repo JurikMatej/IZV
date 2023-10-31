@@ -7,12 +7,6 @@ Detailni zadani projektu je v samostatnem projektu e-learningu.
 Nezapomente na to, ze python soubory maji dane formatovani.
 
 Muzete pouzit libovolnou vestavenou knihovnu a knihovny predstavene na prednasce
-
-TODO refactor where aplicable
-     python -m pytest crashes
-     custom tests
-     github
-     submit
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -57,8 +51,8 @@ def generate_graph(a: List[float], show_figure: bool = False, save_path: str | N
     ax.xaxis.set_label_coords(0.5, -0.09)
     ax.set_ylabel(r"$f_a(x)$")
 
-    ax.set_xlim([-3,5])
-    ax.set_ylim([0,40])
+    ax.set_xlim([-3, 5])
+    ax.set_ylim([0, 40])
 
     ax.set_xticks(np.arange(-3, 4, 1))
 
@@ -87,6 +81,7 @@ def generate_graph(a: List[float], show_figure: bool = False, save_path: str | N
         fig.savefig(save_path)
 
     plt.close(fig)
+
 
 def generate_sinus(show_figure: bool = False, save_path: str | None = None):
     """
