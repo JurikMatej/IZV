@@ -1,0 +1,14 @@
+# created by virtualenv automatically
+
+__pycache__
+**/__pycache__
+.idea
+.pytest_cache
+tmp_fn.png
+tmp_sin.png
+pyvenv.cfg
+interactive*
+share
+Scripts
+Lib
+etc
