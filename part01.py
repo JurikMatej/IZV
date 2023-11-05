@@ -2,7 +2,7 @@
 """
 IZV cast1 projektu
 Autor: xjurik12
-Python verze: 3.10
+Python verze: 3.10, tested also on 3.12
 
 Detailni zadani projektu je v samostatnem projektu e-learningu.
 Nezapomente na to, ze python soubory maji dane formatovani.
@@ -118,8 +118,8 @@ def generate_sinus(show_figure: bool = False, save_path: str | None = None):
 
     mask_f3_over_f1 = np.ma.masked_greater(f3, f1)
     mask_f3_under_f1 = np.ma.masked_less(f3, f1)
-    ax3.plot(t, mask_f3_over_f1, color='green')
-    ax3.plot(t, mask_f3_under_f1, color='red')
+    ax3.plot(t, mask_f3_over_f1, color='red')
+    ax3.plot(t, mask_f3_under_f1, color='green')
     ax3.set_ylim([-0.8, 0.8])
     ax3.margins(x=0, y=0)
     ax3.set_yticks([-0.8, -0.4, 0, 0.4, 0.8])
