@@ -135,7 +135,6 @@ def generate_sinus(show_figure: bool = False, save_path: str | None = None):
 
     plt.close()
 
-
 def download_data() -> List[Dict[str, Any]]:
     """
     Uloha c.3: Stahovanie meteorologickych dat dostupnych na web stranke predlozenej v zadani a ich nasledne spracovanie
