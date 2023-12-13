@@ -8,6 +8,17 @@ import seaborn as sns
 import numpy as np
 import zipfile
 
+
+# TODO
+#     per-task visualisation improvements
+#     per-task code refactor
+#         Read through some examples on seaborn usage to see what can be improved
+#     per-task graph validity check
+#     docstrings
+#     Assignment specification check (see whether I got everything alright)
+
+
+
 # muzete pridat libovolnou zakladni knihovnu ci knihovnu predstavenou na prednaskach
 # dalsi knihovny pak na dotaz
 
