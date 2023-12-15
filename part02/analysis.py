@@ -1,98 +1,109 @@
 #!/usr/bin/env python3.11
 # coding=utf-8
+"""
+IZV project part 2
+Author: xjurik12
+Python version: 3.10
+"""
+
 from io import BytesIO
 
 from matplotlib import pyplot as plt
+from matplotlib.dates import DateFormatter
 import pandas as pd
 import seaborn as sns
 import numpy as np
 import zipfile
 
 
-# TODO
-#     per-task visualisation improvements
-#     per-task code refactor
-#         Read through some examples on seaborn usage to see what can be improved
-#     per-task graph validity check
-#     docstrings
-#     Assignment specification check (see whether I got everything alright)
-
-
-
-# muzete pridat libovolnou zakladni knihovnu ci knihovnu predstavenou na prednaskach
-# dalsi knihovny pak na dotaz
-
 # Ukol 1: nacteni dat ze ZIP souboru
 def load_data(filename: str) -> pd.DataFrame:
-    # tyto konstanty nemente, pomuzou vam pri nacitani
-    headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
-               "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27", "p28",
-               "p34", "p35", "p39", "p44", "p45a", "p47", "p48a", "p49", "p50a", "p50b", "p51", "p52", "p53", "p55a",
-               "p57", "p58", "a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q", "r", "s", "t", "p5a"]
+    """
+    Load data from a zip file into a pandas dataframe
+    The zip file must have a predetermined structure as per the ASSIGNMENT of this project - nested zip archives
+    with csv files with specific names encoded in cp1250
 
-    # def get_dataframe(filename: str, verbose: bool = False) -> pd.DataFrame:
+    :param filename: Filename of the data to be loaded
+    :return: Pandas Dataframe containing the loaded csv data and an added column named 'region' with a specific
+    region's name abbreviation
+    """
+    headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
+               "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27",
+               "p28",
+               "p34", "p35", "p39", "p44", "p45a", "p47", "p48a", "p49", "p50a", "p50b", "p51", "p52", "p53", "p55a",
+               "p57", "p58", "a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q", "r", "s", "t",
+               "p5a"]
+
     regions = {
-        "PHA": "00",
-        "STC": "01",
-        "JHC": "02",
-        "PLK": "03",
-        "ULK": "04",
-        "HKK": "05",
-        "JHM": "06",
-        "MSK": "07",
-        "OLK": "14",
-        "ZLK": "15",
-        "VYS": "16",
-        "PAK": "17",
-        "LBK": "18",
-        "KVK": "19",
+        "00": "PHA",
+        "01": "STC",
+        "02": "JHC",
+        "03": "PLK",
+        "04": "ULK",
+        "05": "HKK",
+        "06": "JHM",
+        "07": "MSK",
+        "14": "OLK",
+        "15": "ZLK",
+        "16": "VYS",
+        "17": "PAK",
+        "18": "LBK",
+        "19": "KVK",
     }
 
-    # TODO skip regions not used
-    # TODO skip chodci.csv
-
     df = pd.DataFrame()
-    with zipfile.ZipFile("data.zip", "r") as data_archive:
 
+    # As per the assignment, datasource is a zipped archive of nested zipped archives containting csv files
+    # by which the data source will be populated
+    with zipfile.ZipFile(filename, "r") as data_archive:
         for nested_archive_name in data_archive.namelist():
-            nested_archive_raw = BytesIO(data_archive.read(nested_archive_name))
-            with zipfile.ZipFile(nested_archive_raw) as csv_archive:
+            nested_archive_rawcontent = BytesIO(data_archive.read(nested_archive_name))
 
+            with zipfile.ZipFile(nested_archive_rawcontent) as csv_archive:
                 for csvfile_zipped_name in csv_archive.namelist():
-                    # read one csv from one inner zip
-                    csvfile_raw = BytesIO(csv_archive.read(csvfile_zipped_name))
-                    current_region_code = csvfile_zipped_name.split('.')[
-                        0]  # File name without the extension (remove '.csv')
 
-                    for region_abbrev, region_code in regions.items():
-                        if current_region_code == region_code:
-                            df_to_append = pd.read_csv(csvfile_raw, encoding="cp1250", sep=";",
-                                                       names=headers, low_memory=False)
+                    # Check whether the filename equals one of the region codes
+                    current_region_code = csvfile_zipped_name.split('.')[0]  # File name without the extension (remove '.csv')
+                    if current_region_code in regions:
+                        csvfile_rawcontent = BytesIO(csv_archive.read(csvfile_zipped_name))
 
-                            # Add a region column to the DataFrame
-                            df_to_append['region'] = region_abbrev
+                        # Create a dataframe with the csv file contents
+                        df_to_append = pd.read_csv(csvfile_rawcontent, dtype=np.string_, encoding="cp1250", sep=";",
+                                                   names=headers, low_memory=False)
+                        # Add the region abbreviated name to the dataframe
+                        df_to_append['region'] = regions[current_region_code]
 
-                            df = pd.concat([df, df_to_append], ignore_index=True)
+                        # Add resulting dataframe to the result
+                        df = pd.concat([df, df_to_append], ignore_index=True)
 
     return df
 
 
 # Ukol 2: zpracovani dat
 def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
-    df2 = df.copy()
+    """
+    Take the loaded dataframe and type cast its columns into desired types.
+    Parse necessary dates to pandas datetime format.
+    Also remove duplicate entries marked by the p1 'Identification Numbers'.
+
+    :param df: Loaded dataframe
+    :param verbose: Flag to make the function also report the original dataframe size, and it's size after parsing
+    :return: Parsed data frame
+    """
+    df_to_format = df.copy()
 
     if verbose:
-        size = np.sum(df2.memory_usage(index=False, deep=True))
+        size = np.sum(df_to_format.memory_usage(index=False, deep=True))
         print("orig_size={:.1f} MB".format(size / 1_000_000))
 
-    # Store 'p2a' as new 'date' column
-    df2['date'] = pd.to_datetime(df2['p2a'])
+    # Store 'p2a' as a new datetime-typed column 'date'
+    df_to_format["p2a"] = pd.to_datetime(df_to_format["p2a"])
+    df_to_format.rename(columns={"p2a": "date"}, inplace=True)
 
     # Define column groups based on their desired datatype
-    all_cols = set(df2)
-
-    processed_cols = set(("region", "p2a"))
-    float_cols = set(("a", "b", "d", "e", "f", "g"))
+    all_cols = set(df_to_format)
+    processed_cols = {"region", "date"}
+    float_cols = {"a", "b", "d", "e", "f", "g"}
     not_category_cols = processed_cols.union(float_cols)
 
     category_cols = all_cols.difference(not_category_cols)
@@ -100,25 +111,39 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     # Set types of the columns as needed
     for col in category_cols.difference(processed_cols):
         if col in category_cols:
-            df[col] = df2[col].astype('category')  # Cast to category
+            df_to_format[col] = df_to_format[col].astype('category')  # Cast to category
 
         elif col in float_cols:
-            df2[col] = [str(row).replace(",", ".") for row in df2[col]]
-            df2[col] = pd.to_numeric(df2[col], errors='coerce')  # Cast to float
+            df_to_format[col] = [str(row).replace(",", ".") for row in df_to_format[col]]
+            df_to_format[col] = pd.to_numeric(df_to_format[col], errors='coerce')  # Cast to float
 
-    # Drop any duplicates in 'p1' column
-    df2 = df2.drop_duplicates(subset=['p1'])
+        else:
+            pass  # Already processed
+
+    # Drop entries with duplicate identification numbers
+    df_to_format = df_to_format.drop_duplicates(subset=['p1'])
 
     if verbose:
-        size = np.sum(df2.memory_usage(index=False, deep=True))
+        size = np.sum(df_to_format.memory_usage(index=False, deep=True))
         print("new_size={:.1f} MB".format(size / 1_000_000))
 
-    return df2
+    return df_to_format
 
 
 # Ukol 3: počty nehod oidke stavu řidiče
-def plot_state(df: pd.DataFrame, fig_location: str = None,
-               show_figure: bool = False):
+def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
+    """
+    Make a plot visualizing the state of the driver who caused an accident.
+    Each subplot represents a count of drivers for a specific driver state counted across different regions
+
+    :param df: Parsed dataframe
+    :param fig_location: Path where to save the resulting figure. If set, save figure, else do not save
+    :param show_figure: Show the figure if true, else do not show
+    """
+
+    # Define an enumeration of the driver state indexes mapped to their textual description
+    # For a full overview, all the possible driver states are defined here, but some are commented out
+    # because only states with index 4 and above are being analysed
     driver_states = {
         # 1: 'dobrý',
         # 2: 'unaven, usnul, náhlá fyzická indispozice',
@@ -131,207 +156,206 @@ def plot_state(df: pd.DataFrame, fig_location: str = None,
         9: 'sebevražda'
     }
 
-    df2 = df.copy()
+    # Make a copy of the passed dataset to work on
+    data = df.copy()
 
-    df2 = df2.dropna(subset=['p57'])
-    df2['p57'] = df2['p57'].astype("int")
-    df2 = df2[(df2['p57'] > 3)]
-    df2['region_p57_count'] = df2['p57']
-    df2['region_p57_max'] = df2['p57']
+    # p57 data col = driver state
+    # Filter p57 to only contain relevant states
+    data = data.dropna(subset=['p57'])
+    data['p57'] = data['p57'].astype(int)
+    data = data[(data['p57'] > 3)]
 
-    data_to_plot = df2.copy()
-    data_to_plot = data_to_plot.replace({'p57': driver_states})
-    data_to_plot = data_to_plot.groupby(['region', 'p57']).agg({'region_p57_count': 'count'}).reset_index()
+    # Store a count of the driver states before grouping the data
+    data['region_p57_count'] = data['p57']
 
-    ## TODO HOW TO GET Y MAX... Rewrite so each AX has a unique max_y
-    # for region in data_to_plot['region'].unique():
-    # data_to_plot[data_to_plot['region'] == 'HKK']['region_p57_count'].max()
+    data = data.replace({'p57': driver_states})
+    data = data.groupby(['region', 'p57']).agg({'region_p57_count': 'count'}).reset_index()
 
-    # Generate graphs
-    # sns.set_style("darkgrid")
-
-    graphs = sns.catplot(data=data_to_plot,
+    # Make a barplot for the resulting dataset
+    sns.set_style("whitegrid")
+    graphs = sns.catplot(data=data,
                          x='region',
                          y='region_p57_count',
                          col='p57',
                          col_wrap=2,
-                         kind="bar",
+                         hue='region',
+                         kind='bar',
                          height=3,
-                         aspect=1.6)
+                         aspect=1.8,
+                         sharey=False,
+                         legend=False)
 
+    # Modify specific parameters of the graph
     graphs.set_xlabels("Kraj")
     graphs.set_ylabels("Počet nehod")
-    graphs.set_titles("{col_name}")
-    plt.suptitle("Počet nehod dle stavu řidiče při nedobrém stavu", y=1.03)
-
-    # iterate through axes
+    graphs.set_titles("Stav řidiče: {col_name}")
+    plt.suptitle("Počet nehod dle stavu řidiče při nedobrém stavu", y=1.02)
     for ax in graphs.axes.ravel():
-        # add annotations
-        for c in ax.containers:
-            labels = [int((v.get_height())) for v in c]
-            ax.bar_label(c, labels=labels, label_type='edge')
+        ax.margins(y=0.1)  # Add y margin to each ax
 
-        ax.margins(y=0.2)
+    if show_figure:
+        plt.show()
 
-    # TODO fig_location & show_figure
+    if fig_location:
+        plt.savefig(fig_location)
 
-    plt.show()
     plt.close()
 
 
-
 # Ukol4: alkohol v jednotlivých hodinách
-def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
-                 show_figure: bool = False):
-    regions_to_plot = ['HKK', 'JHC', 'JHM', 'KVK']
+def plot_alcohol(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
+    """
+    Make a plot visualizing how many accidents are caused by drivers who have drunk alcohol, and how many are caused by
+    drivers who have not drunk any alcohol
+    Data is limited to 4 arbitrarily selected regions and shows sums of drivers (under the influence or sober) who
+    caused an accident during a day (0-23 hours)
 
-    data_to_plot = df.copy()
-    data_to_plot = data_to_plot[data_to_plot['region'].isin(regions_to_plot)]
+    :param df: Parsed dataframe
+    :param fig_location: Path where to save the resulting figure. If set, save figure, else do not save
+    :param show_figure: Show the figure if true, else do not show
+    """
+    # Make a copy of the passed dataset to work on
+    data = df.copy()
 
-    # Add info about alcohol presence
-    data_to_plot['p11'] = data_to_plot['p11'].astype(int)
-    data_to_plot.loc[data_to_plot['p11'] < 3, 'alcohol'] = "Ne"
-    data_to_plot.loc[data_to_plot['p11'] >= 3, 'alcohol'] = "Ano"
+    # Select four regions to create the graph for
+    selected_regions = ['JHM', 'MSK', 'OLK', 'ZLK']
+    data = data[data['region'].isin(selected_regions)]
 
-    data_to_plot['p2b'] = [x[:2] if x[:2] not in ['24', '25'] else None for x in data_to_plot['p2b']]
-    data_to_plot['p2b'] = data_to_plot['p2b'].dropna()  # .astype(int)
+    # p11 data col = info concerning alcohol use of the person who caused an accident
+    # Prepare the p11 data col for further use - cast as 'int' column
+    data['p11'] = data['p11'].astype(int)
+    # ...and filter out the entries for which alcohol use was not tested (p11 = 0)
+    data = data[data['p11'] != 0]
 
-    data_to_plot = data_to_plot.groupby(['region', 'p2b', 'alcohol']).agg({'p11': 'count'}).reset_index()
-    # data_to_plot
+    # Distinguish alcohol use in a new category column 'alcohol'
+    # NOTE to the reviewer: p11=1 means ALCOHOL=YES, but ACCORDING TO THE ASSIGNMENT, it is treated as ALCOHOL=NO here
+    data.loc[data['p11'] < 3, 'alcohol'] = "Ne"
+    data.loc[data['p11'] >= 3, 'alcohol'] = "Ano"
 
-    # data_to_plot = data_to_plot.groupby(['region', 'p7', data_to_plot.date.dt.month]).agg({'p1': 'count'}).reset_index()
-    # data_to_plot = data_to_plot.replace({'p7': crash_type_titles})
-    # p7cat = data_to_plot['p7'].cat.remove_categories([0, 3])
-    # data_to_plot['p7'] = p7cat
-    #
-    # TODO Set better ylim
-    graphs = sns.catplot(data=data_to_plot,
+    # Prepare x-axis - time of the day
+    data['p2b'] = [x[:2] if x[:2] not in ['24', '25'] else None for x in data['p2b']]
+    data['p2b'] = data['p2b'].dropna()
+
+    # Group data by region, time of day and alcohol use and add the number of accidents to each group
+    data = data.groupby(['region', 'p2b', 'alcohol']).agg({'p11': 'count'}).reset_index()
+
+    # Make a barplot for the resulting dataset
+    sns.set_style("whitegrid")
+    graphs = sns.catplot(data=data,
                          x='p2b',
                          y='p11',
                          col='region',
                          col_wrap=2,
+                         hue='alcohol',
                          kind="bar",
                          legend=True,
                          legend_out=True,
                          sharex=False,
                          sharey=False,
-                         hue='alcohol',
-                         height=3,
-                         aspect=1.6,
-                         )
+                         height=3.2,
+                         aspect=1.7)
 
-    graphs.fig.subplots_adjust(hspace=0.3, wspace=0.2)
-    graphs.set_xlabels("Hodina")
+    # Modify specific parameters of the graph
     graphs.set_titles("Kraj: {col_name}")
+    graphs.set(xlabel="Hodina", ylabel="Počet nehod")
     graphs.legend.set(title="Alkohol")
-    graphs.set(ylabel="Počet nehod")
+    graphs.fig.subplots_adjust(hspace=0.4, wspace=0.2)
 
-    # TODO fig_location & show_figure
+    if fig_location:
+        plt.savefig(fig_location)
 
-    plt.show()
+    if show_figure:
+        plt.show()
+
     plt.close()
 
 
 # Ukol 5: Zavinění nehody v čase
-def plot_fault(df: pd.DataFrame, fig_location: str = None,
-               show_figure: bool = False):
-    # regions_to_plot = ['HKK', 'JHC', 'JHM', 'KVK']
-    regions_to_plot = ['JHM', 'MSK', 'OLK', 'ZLK']
+def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
+    """
+    Makes a plot visualising four of the various causes for an accident.
+    Data is limited to 4 arbitrarily picked regions and shows counts of each accident cause type for the last 7 years
+    across those regions.
 
-    data_to_plot = df.copy()
-    data_to_plot = data_to_plot[data_to_plot['region'].isin(regions_to_plot)]
+    :param df: Parsed dataframe
+    :param fig_location: Path where to save the resulting figure. If set, save figure, else do not save
+    :param show_figure: Show the figure if true, else do not show
+    """
+    # Make a copy of the passed dataset to work on
+    data = df.copy()
+
+    # Select four regions to create the graph for
+    selected_regions = ['JHM', 'MSK', 'OLK', 'ZLK']
+    data = data[data['region'].isin(selected_regions)]
 
     # Limit data to a date range
     date_from = np.datetime64("2016-01-01")
-    date_to = np.datetime64("2023-01-01")  # But the max date is 2022-12-31 either way
-    data_to_plot = data_to_plot[(date_from <= data_to_plot["date"]) & (data_to_plot["date"] <= date_to)]
+    date_to = np.datetime64("2023-01-01")
+    data = data[(date_from <= data['date']) & (data['date'] <= date_to)]
 
-    data_to_plot['p10'] = data_to_plot['p10'].astype(int)
-    data_to_plot = data_to_plot[(data_to_plot['p10'] > 0) & (data_to_plot['p10'] < 5)]
-    # data_to_plot
+    # p10 data col = the cause of an accident
+    # Select a specific range of accidents (with indexes ranging from 1 to 4)
+    data['p10'] = data['p10'].astype(int)
+    data = data[(data['p10'] > 0) & (data['p10'] < 5)]
 
-    data_to_plot['caused_by_motorized'] = data_to_plot[data_to_plot['p10'] == 1]['p10']
-    data_to_plot['caused_by_non_motorized'] = data_to_plot[data_to_plot['p10'] == 2]['p10']
-    data_to_plot['caused_by_walker'] = data_to_plot[data_to_plot['p10'] == 3]['p10']
-    data_to_plot['caused_by_animal'] = data_to_plot[data_to_plot['p10'] == 4]['p10']
+    # Define respective accident causes as separate dataframe columns
+    data['Řidičem motorového vozidla'] = data[data['p10'] == 1]['p10']
+    data['Řidičem nemotorového vozidla'] = data[data['p10'] == 2]['p10']
+    data['Chodcem'] = data[data['p10'] == 3]['p10']
+    data['Zvířetem'] = data[data['p10'] == 4]['p10']
 
-    # data_to_plot.loc[data_to_plot['p10'] == 1, "caused_by"] = "Řidičem motorového vozidla"
-    # data_to_plot.loc[data_to_plot['p10'] == 2, "caused_by"] = "Řidičem nemotorového vozidla"
-    # data_to_plot.loc[data_to_plot['p10'] == 3, "caused_by"] = "Chodcem"
-    # data_to_plot.loc[data_to_plot['p10'] == 4, "caused_by"] = "Zvířetem"
+    # Pivot relevant data (count occurrences of each caused accident by its causes)
+    data = pd.pivot_table(data,
+                          index=["region", "date"],
+                          values=['Zvířetem', 'Řidičem motorového vozidla', 'Řidičem nemotorového vozidla', 'Chodcem'],
+                          aggfunc="count")
 
-    # data_to_plot = data_to_plot.groupby(['region', 'date']).agg({'caused_by': 'count'}).reset_index()
-    data_to_plot = (data_to_plot.groupby(['region', 'date']).agg(
-        {'caused_by_motorized': 'sum', 'caused_by_non_motorized': 'sum', 'caused_by_walker': 'sum',
-         'caused_by_animal': 'sum', 'p10': 'sum'}).reset_index())
-    # data_to_plot
+    # Resample dates by months and stack the data
+    data = data.groupby([pd.Grouper(level='region'),
+                         pd.Grouper(level='date', freq="M")]).sum()
+    data = data.stack().to_frame()
 
-    data_to_plot = pd.pivot_table(data_to_plot,
-                                  values=["caused_by_motorized", "caused_by_non_motorized", "caused_by_walker",
-                                          "caused_by_animal"],
-                                  index=["region", "date"],
-                                  aggfunc="sum")
-    # data_to_plot
+    # Give the aggregated accident count column a name
+    data.columns = ['Počet nehod']
 
-    data_to_plot = data_to_plot.groupby([data_to_plot.index.get_level_values('region'),
-                                         data_to_plot.index.get_level_values('date').year,
-                                         data_to_plot.index.get_level_values('date').month]).sum()
-    # data_to_plot
-    data_to_plot = data_to_plot.stack().to_frame()
-    data_to_plot.columns = ["Počet nehod"]
-    # new_array = np.char.add([x for x in data_to_plot.index.get_level_values(2).astype(str)],
-    #                         ['/'])
-    # new_array = np.char.add(new_array, [x[2:] for x in data_to_plot.index.get_level_values(1).astype(str)])
-    # new_array
-
-    # data_to_plot['datecol'] = [x[2:] for x in data_to_plot.index.get_level_values(1).astype(str)]
-    # data_to_plot['datecol'] = new_array
-    data_to_plot['datecol'] = pd.to_datetime(data_to_plot.index.get_level_values(1).astype(str) + "/"
-                                             + data_to_plot.index.get_level_values(2).astype(str) + "/01")
-
-    data_to_plot.index.names = ['region', 'year', 'month', None]
-
-    # data_to_plot['datecol']
-
-    # sns.set_style("darkgrid")
-    graphs = sns.relplot(data=data_to_plot,
-                         x="datecol",
+    # Make a lineplot for the resulting dataset
+    sns.set_style("whitegrid")
+    graphs = sns.relplot(data=data,
+                         x="date",
                          y="Počet nehod",
-                         kind="line",
-                         col=data_to_plot.index.get_level_values('region'),
+                         col=data.index.get_level_values('region'),
                          col_wrap=2,
-                         height=4,
+                         hue=data.index.get_level_values(2),
+                         kind="line",
+                         height=3,
                          aspect=1.6,
-                         facet_kws={"sharex": False},
-                         hue=data_to_plot.index.get_level_values(3)
-                         )
+                         facet_kws={"sharex": False})
 
+    # Modify specific parameters of the graph
     graphs.set_ylabels("Počet nehod")
     graphs.set_xlabels("")
     graphs.set_titles("Kraj: {col_name}")
     graphs.legend.set(title="Zavinění")
 
-    # TODO savefig and show_fig
+    # Per-ax modifications
+    for ax in graphs.axes.ravel():
+        # Set x-axis major tick formatter
+        fmt = DateFormatter('%m/%y')
+        ax.xaxis.set_major_formatter(fmt)
 
-    plt.show()
+    if fig_location:
+        plt.savefig(fig_location)
+
+    if show_figure:
+        plt.show()
+
     plt.close()
 
 
 if __name__ == "__main__":
-    # zde je ukazka pouziti, tuto cast muzete modifikovat podle libosti
-    # skript nebude pri testovani pousten primo, ale budou volany konkreni
-    # funkce.
     df = load_data("data/data.zip")
     df2 = parse_data(df, True)
 
     plot_state(df2, "01_state.png")
-    plot_alcohol(df2, "02_alcohol.png", True)
+    plot_alcohol(df2, "02_alcohol.png")
     plot_fault(df2, "03_fault.png")
-
-
-# Poznamka:
-# pro to, abyste se vyhnuli castemu nacitani muzete vyuzit napr
-# VS Code a oznaceni jako bunky (radek #%%% )
-# Pak muzete data jednou nacist a dale ladit jednotlive funkce
-# Pripadne si muzete vysledny dataframe ulozit nekam na disk (pro ladici
-# ucely) a nacitat jej naparsovany z disku
