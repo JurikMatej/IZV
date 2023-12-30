@@ -1,3 +1,4 @@
 ## Material
 
-Contains studied material used & documents for future reference
+Contains useful references relevant to the project topic, 
+which I found while implementing my solution.
