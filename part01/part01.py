@@ -167,3 +167,11 @@ def download_data() -> List[Dict[str, Any]]:
         result.append(new_data_entry)
 
     return result
+
+
+if __name__ == "__main__":
+    integrate(lambda x: 10 * x + 2, 0, 1, 100)
+    generate_graph([1., 1.5, 2.], show_figure=False, save_path="tmp_fn.png")
+    generate_sinus(show_figure=False, save_path="tmp_sin.png")
+    from pprint import pprint
+    pprint(download_data())
