@@ -1,10 +1,12 @@
 #!/usr/bin/python3.10
 # coding=utf-8
+
 """
 IZV project part 3
 Author: xjurik12
-Python version: 3.12
+Python version tested on: 3.12
 """
+
 import pandas as pd
 import geopandas
 import matplotlib.pyplot as plt
