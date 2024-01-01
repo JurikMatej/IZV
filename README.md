@@ -1,4 +1,4 @@
-# Data processing and visualisation course - Project
+# Data processing and visualization course - Project
 
 ## The assignment
 
