@@ -91,7 +91,7 @@ def plot_geo(gdf: geopandas.GeoDataFrame, fig_location: str = None, show_figure:
         plt.show()
 
     if fig_location:
-        plt.savefig(fig_location)
+        fig.savefig(fig_location)
 
     plt.close()
 
@@ -160,7 +160,7 @@ def plot_cluster(gdf: geopandas.GeoDataFrame, fig_location: str = None, show_fig
         plt.show()
 
     if fig_location:
-        plt.savefig(fig_location)
+        fig.savefig(fig_location)
 
     plt.close()
 
