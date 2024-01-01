@@ -69,12 +69,12 @@ def interesting_data_graph(df: pd.DataFrame):
 
     # Map accident type categories to their string descriptions
     data['p6'] = data['p6'].map(ACCIDENT_TYPE)
-    data.rename(columns={'p6': 'Typ nehody policejního vozidla'}, inplace=True)
+    data.rename(columns={'p6': 'Typ nehody'}, inplace=True)
 
     # Filter out only the accidents caused by the police
     data = data[data['p48a'].isin([12, 13])]
 
-    g = sns.displot(data, x="Typ nehody policejního vozidla", hue="Typ nehody policejního vozidla",
+    g = sns.displot(data, x="Typ nehody", hue="Typ nehody",
                     height=5, aspect=2)
 
     # Fine tune the axis
@@ -84,8 +84,9 @@ def interesting_data_graph(df: pd.DataFrame):
     for container in g.ax.containers:
         g.ax.bar_label(container, fmt=lambda x: int(x) if x > 0 else '')
 
-    g.savefig("fig.png")
+    plt.suptitle("I policisté mají nehody")
 
+    g.savefig("fig.png")
     plt.show()
 
 
