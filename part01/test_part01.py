@@ -7,15 +7,17 @@ Spousteni:
 nebo
    python3 -m pytest
 """
-import part01
-import numpy as np
 import os
 import pytest
+import part01
 
 
 def test_integrate():
     """Test vypoctu integralu """
-    def f(x): return 10 * x + 2
+
+    def f(x):
+        return 10 * x + 2
+
     r = part01.integrate(f, 0, 1, 100)
     assert r == pytest.approx(7)
 

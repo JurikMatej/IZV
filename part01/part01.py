@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 IZV cast1 projektu
 Autor: xjurik12
@@ -9,12 +10,14 @@ Nezapomente na to, ze python soubory maji dane formatovani.
 
 Muzete pouzit libovolnou vestavenou knihovnu a knihovny predstavene na prednasce
 """
+
+from typing import List, Callable, Dict, Any
+
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
 from numpy.typing import NDArray
-from typing import List, Callable, Dict, Any
 
 
 def integrate(f: Callable[[NDArray], NDArray], a: float, b: float, steps=1000) -> float:
@@ -41,7 +44,7 @@ def generate_graph(a: List[float], show_figure: bool = False, save_path: str | N
     :param save_path: cesta, do ktorej sa ulozi vysledny graf, pokial je definovana
     """
     x = np.linspace(-3, 3, 200, dtype=np.float32)
-    y = np.array(a).reshape(3, 1).astype(np.float32)**2 * x**3 * np.sin(x)
+    y = np.array(a).reshape(3, 1).astype(np.float32) ** 2 * x ** 3 * np.sin(x)
 
     fig = plt.figure(figsize=(8, 4))
     ax = fig.add_subplot(111)
@@ -87,14 +90,17 @@ def generate_graph(a: List[float], show_figure: bool = False, save_path: str | N
 def generate_sinus(show_figure: bool = False, save_path: str | None = None):
     """
     Uloha c.3: Generovanie grafov dvoch samostatnych funkcii a ich suctu
-    Funkcia vygeneruje grafy dvoch preddefinovanych funkcii zo zadania a potom graf treti, ktory je suctom predoslych
-    dvoch
+
+    Funkcia vygeneruje grafy dvoch preddefinovanych funkcii zo zadania
+    a potom graf treti, ktory je suctom predoslych dvoch
+
     V tomto tretom grafe budu zvyraznene na zeleno jeho casti s hodnotami vyssimi ako tymi,
-    ktore v rovnakom bode X nadobuda prva funkcia a na cerveno jeho casti s hodnotami nizsimi ako tymi,
-    ktore v rovnakom bode X nadobuda prva funkcia
+    ktore v rovnakom bode X nadobuda prva funkcia a na cerveno jeho casti
+    s hodnotami nizsimi ako tymi, ktore v rovnakom bode X nadobuda prva funkcia
 
     :param show_figure: prepinac zobrazenia grafu - graf sa zobrazi, ak je nastaveny na True
-    :param save_path: cesta, do ktorej sa ulozi vysledny graf, pokial je v tomto parametri definovana
+    :param save_path: cesta, do ktorej sa ulozi vysledny graf, pokial je v tomto parametri
+                      definovana
     """
     t = np.linspace(0, 100, 25000)
     f1 = 0.5 * np.cos(0.02 * np.pi * t)
@@ -135,21 +141,29 @@ def generate_sinus(show_figure: bool = False, save_path: str | None = None):
 
     plt.close()
 
+
 def download_data() -> List[Dict[str, Any]]:
     """
-    Uloha c.3: Stahovanie meteorologickych dat dostupnych na web stranke predlozenej v zadani a ich nasledne spracovanie
-    do pozadovaneho formatu
+    Uloha c.3: Stahovanie meteorologickych dat dostupnych na web stranke predlozenej
+    v zadani a ich nasledne spracovanie do pozadovaneho formatu
 
     :return: Data spracovane do predom zadaneho formatu List[Dict[str, Any]]
     """
-    meteo_content_raw = requests.get("https://ehw.fit.vutbr.cz/izv/st_zemepis_cz.html").content
+    meteo_data_url = "https://ehw.fit.vutbr.cz/izv/st_zemepis_cz.html"
+
+    try:
+        meteo_content_raw = requests.get(meteo_data_url, timeout=10).content
+    except requests.exceptions.Timeout:
+        print("download_data() timed out")
+        return []
+
     soup = BeautifulSoup(meteo_content_raw, "html.parser")
     meteo_table_raw = soup.find_all("table")[1]
 
     meteo_table_trs = iter(meteo_table_raw.find_all("tr"))
     next(meteo_table_trs)  # Skip the table headers
 
-    result = list()
+    result = []
     for tr in meteo_table_trs:
         tds = tr.find_all("td")
 
@@ -174,4 +188,5 @@ if __name__ == "__main__":
     generate_graph([1., 1.5, 2.], show_figure=False, save_path="tmp_fn.png")
     generate_sinus(show_figure=False, save_path="tmp_sin.png")
     from pprint import pprint
+
     pprint(download_data())
