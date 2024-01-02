@@ -97,8 +97,6 @@ def interesting_data_graph(df: pd.DataFrame):
     and save it in the pre-configured format (see GRAPH_OUTPUT_FILE)
 
     :param df: Source dataframe prepared by prepare_data()
-
-    TODO p10 = 1 => policajt zavinil nehodu
     """
     accident_type = {
         1: "Zrážka s idúcim nekoľajovým vozidlom",
@@ -110,23 +108,29 @@ def interesting_data_graph(df: pd.DataFrame):
         7: "Zrážka s vlakom",
         8: "Zrážka s električkou (tramvaj)",
         9: "Havária",
-        0: "Iný druh nehody",
     }
 
     data = df.copy()
-    data = data[['p1', 'p6', 'p48a']]
+    data = data[['p1', 'p6', 'p10', 'p48a']]
 
     # Drop empty data for accident types
     data = data.dropna(subset=['p6'])
 
+    # Filter out the unspecified types of an accident
+    data = data[data['p6'] != 0]
     # Map accident type categories to their string descriptions
     data['p6'] = data['p6'].map(accident_type)
     data.rename(columns={'p6': 'Typ nehody'}, inplace=True)
 
-    # Filter out only the accidents caused by the police
+    # Filter out only the accidents which involved the police
     data = data[data['p48a'].isin([12, 13])]
 
-    g = sns.displot(data, x="Typ nehody", hue="Typ nehody",
+    # Filter out only the accidents that were caused by the police
+    data = data[data['p10'] == 1]
+
+    g = sns.displot(data,
+                    x="Typ nehody",
+                    hue="Typ nehody",
                     height=5, aspect=2)
 
     # Fine tune the axis
@@ -136,7 +140,7 @@ def interesting_data_graph(df: pd.DataFrame):
     for container in g.ax.containers:
         g.ax.bar_label(container, fmt=lambda x: int(x) if x > 0 else '')
 
-    plt.suptitle("Aj policajti sú účastníkmi nehody")
+    plt.suptitle("Aj policajti spôsobujú nehody")
 
     g.savefig(GRAPH_OUTPUT_FILE)
     print(f"Graf použitý vo finálnej správe sa úspešne uložil do súboru '{GRAPH_OUTPUT_FILE}'")
@@ -319,8 +323,8 @@ def interesting_data_stats(df: pd.DataFrame):
 
 if __name__ == '__main__':
     _df = prepare_data('accidents.pkl.gz')
-    interesting_data_table(_df, generate_latex=False)
-    print()
+    # interesting_data_table(_df, generate_latex=False)
+    # print()
     interesting_data_graph(_df)
-    print()
-    interesting_data_stats(_df)
+    # print()
+    # interesting_data_stats(_df)
