@@ -7,11 +7,12 @@ Author: xjurik12
 Python version tested on: 3.12
 """
 
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pandas.core.indexes.frozen import FrozenList
+
+GRAPH_OUTPUT_FILE = "fig.png"
 
 
 def prepare_data(path_to_input: str) -> pd.DataFrame:
@@ -20,12 +21,7 @@ def prepare_data(path_to_input: str) -> pd.DataFrame:
 
     :param path_to_input: path to prepared data (pickle-dumped dataframe)
     """
-    df = pd.read_pickle(path_to_input)
-
-    # Keep only relevant data
-    # df = df[['p1', 'p10', 'p11', 'date', 'region', 'd', 'e']]
-
-    return df
+    return pd.read_pickle(path_to_input)
 
 
 def interesting_data_table(df: pd.DataFrame):
@@ -34,7 +30,6 @@ def interesting_data_table(df: pd.DataFrame):
 
     TODO docstring
     """
-
     VEHICLE_OWNERS = {
         11: "Ministerstvo vnútra",
         12: "Polícia ČR",
@@ -76,7 +71,7 @@ def interesting_data_table(df: pd.DataFrame):
     table_specific.index.names = FrozenList(['Rok', 'Majiteľ havarovaného vozidla'])
     table_specific.columns = ['Nehody podľa vozidla', 'Pomer k celku za rok']
 
-    print("Tables used in the final report: ")
+    print("Tabuľky použité vo finálnej správe:")
     print(table_overview)
     print(table_specific)
 
@@ -90,18 +85,19 @@ def interesting_data_graph(df: pd.DataFrame):
     Do coho policajti radi buraju
 
     TODO docstring
+    TODO p10 = 1 => policajt zavinil nehodu
     """
     ACCIDENT_TYPE = {
-        1: "srážka s jedoucím nekolejovým vozidlem",
-        2: "srážka s vozidlem zaparkovaným, odstaveným",
-        3: "srážka s pevnou překážkou",
-        4: "srážka s chodcem",
-        5: "srážka s lesní zvěří",
-        6: "srážka s domácím zvířetem",
-        7: "srážka s vlakem",
-        8: "srážka s tramvají",
-        9: "havárie",
-        0: "jiný druh nehody",
+        1: "Zrážka s idúcim nekoľajovým vozidlom",
+        2: "Zrážka s vozidlom zaparkovaným/odstaveným",
+        3: "Zrážka s pevnou prekážkou",
+        4: "Zrážka s chodcom",
+        5: "Zrážka s lesnou zverou",
+        6: "Zrážka s domácim zvieraťom",
+        7: "Zrážka s vlakom",
+        8: "Zrážka s električkou (tramvaj)",
+        9: "Havária",
+        0: "Iný druh nehody",
     }
 
     data = df.copy()
@@ -121,67 +117,183 @@ def interesting_data_graph(df: pd.DataFrame):
                     height=5, aspect=2)
 
     # Fine tune the axis
-    g.ax.set(ylabel="Počet nehod", xticks=[])
+    g.ax.set(ylabel="Počet nehôd", xticks=[])
 
     # Set bar labels
     for container in g.ax.containers:
         g.ax.bar_label(container, fmt=lambda x: int(x) if x > 0 else '')
 
-    plt.suptitle("I policisté mají nehody")
+    plt.suptitle("Aj policajti sú účastníkmi nehody")
 
-    g.savefig("fig.png")
+    g.savefig(GRAPH_OUTPUT_FILE)
+    print(f"Graf použitý vo finálnej správe sa úspešne uložil do súboru '{GRAPH_OUTPUT_FILE}'")
+
     plt.show()
+
+
+def _most_crashed_police_vehicle(df: pd.DataFrame):
+    """
+    TODO docstring
+    """
+    VEHICLES = {  # Vehicles without Buses and special types of vehicle (train, tractor etc.)
+        1: "ALFA-ROMEO",
+        2: "AUDI",
+        3: "AVIA",
+        4: "BMW",
+        5: "CHEVROLET",
+        6: "CHRYSLER",
+        7: "CITROEN",
+        8: "DACIA",
+        9: "DAEWOO",
+        10: "DAF",
+        11: "DODGE",
+        12: "FIAT ",
+        13: "FORD",
+        14: "GAZ, VOLHA",
+        15: "FERRARI",
+        16: "HONDA",
+        17: "HYUNDAI",
+        18: "IFA",
+        19: "IVECO",
+        20: "JAGUAR",
+        21: "JEEP",
+        22: "LANCIA",
+        23: "LAND ROVER",
+        24: "LIAZ",
+        25: "MAZDA",
+        26: "MERCEDES",
+        27: "MITSUBISHI",
+        28: "MOSKVIČ",
+        29: "NISSAN",
+        30: "OLTCIT",
+        31: "OPEL",
+        32: "PEUGEOT",
+        33: "PORSCHE",
+        34: "PRAGA",
+        35: "RENAULT",
+        36: "ROVER",
+        37: "SAAB",
+        38: "SEAT",
+        39: "ŠKODA",
+        40: "SCANIA",
+        41: "SUBARU",
+        42: "SUZUKI",
+        43: "TATRA",
+        44: "TOYOTA",
+        45: "TRABANT",
+        46: "VAZ",
+        47: "VOLKSWAGEN",
+        48: "VOLVO",
+        49: "WARTBURG",
+        50: "ZASTAVA",
+        51: "AGM",
+        52: "ARO",
+        53: "AUSTIN",
+        54: "BARKAS",
+        55: "DAIHATSU",
+        56: "DATSUN",
+        57: "DESTACAR",
+        58: "ISUZU",
+        59: "KAROSA",
+        60: "KIA",
+        61: "LUBLIN",
+        62: "MAN",
+        63: "MASERATI",
+        64: "MULTICAR",
+        65: "PONTIAC",
+        66: "ROSS",
+        67: "SIMCA",
+        68: "SSANGYONG",
+        69: "TALBOT",
+        70: "TAZ",
+        71: "ZAZ",
+        79: "APRILIA",
+        80: "CAGIVA",
+        81: "ČZ",
+        82: "DERBI",
+        83: "DUCATI",
+        84: "GILERA",
+        85: "HARLEY",
+        86: "HERO",
+        87: "HUSQVARNA",
+        88: "JAWA",
+        89: "KAWASAKI",
+        90: "KTM",
+        91: "MALAGUTI",
+        92: "MANET",
+        93: "MZ",
+        94: "PIAGGIO",
+        95: "SIMSON",
+        96: "VELOREX",
+        97: "YAMAHA",
+        98: "jiné vyrobené v ČR",
+        99: "jiné vyrobené mimo ČR"
+    }
+
+    fact_data = df.copy()
+    fact_data = fact_data[['p1', 'p45a']]
+    # Filter out the buses and the 'none of these' field
+    fact_data = fact_data[~fact_data['p45a'].isin([0, *list(range(72, 79))])]
+    fact_data['p45a'] = fact_data['p45a'].map(VEHICLES)
+
+    fact_data = fact_data.groupby(['p45a']).agg({'p1': 'count'}).reset_index()
+    # print(fact1_data)
+
+    the_car = fact_data[fact_data['p1'] == fact_data['p1'].max()].iloc[0]['p45a']
+    the_amount = fact_data['p1'].max()
+
+    print(f"Najbúranejšie policajné auto za posledné roky: {the_car} ({the_amount} havárií)")
+
+
+def _count_of_police_officers_under_the_influence(df: pd.DataFrame):
+    """
+    TODO docstring
+    """
+    fact_data = df.copy()
+    fact_data = fact_data[['p1', 'p11']]
+
+    # Filter data to alcohol influence only
+    fact_data = fact_data[fact_data['p11'].isin([3, *list(range(5, 10))])]  # p11 = [3, 5..9] (p11=4 means use of drugs)
+
+    the_count = fact_data['p1'].count()
+
+    print(f"Počet policajtov zúčastnených pri nehodách, ktorí boli pod vplyvom alkoholu: {the_count}")
+
+
+def _average_damages_caused_with_police_involved(df: pd.DataFrame):
+    """
+    TODO docstring
+    """
+    fact_data = df.copy()
+    fact_data = fact_data[['p1', 'p53', 'p14']]
+
+    # The damages themselves are represented as number of 100 czech koruna (czk) bills
+    the_vehicle_damage = int(fact_data['p53'].mean().round(2) * 100)
+    the_total_damage = int(fact_data['p14'].mean().round(2) * 100)
+
+    print(f"Priemerná škoda na policajnom aute: {the_vehicle_damage} czk")
+    print(f"Priemerná celková škoda spôsobená nehodou, na ktorej sa účastnil aj policajt: {the_total_damage} czk")
 
 
 def interesting_data_stats(df: pd.DataFrame):
     """
-    1. Najburanejsie policajtske vozidlo
-
-        p48a
-        ----
-        12 - policie ČR
-        13 - městská, obecní policie
-
-        p45a
-        ----
-        1 - Alfa Romeo
-        ...
-
-    2. Pocet policajtov pod vplyvom
-
-        p48a
-        ----
-        12 - policie ČR
-        13 - městská, obecní policie
-
-        p11
-        ---
-        3, 5-9 - ANO
-
-
-    3. Priemerna skoda na policajtskom aute
-
-        p48a
-        ----
-        12 - policie ČR
-        13 - městská, obecní policie
-
-        p53
-        ---
-        skoda na vozidle v stokorunach
-
-        p14
-        ---
-        celkova hmotna skoda
+    TODO docstring
     """
+    data = df.copy()
+    data = data[['p1', 'p11', 'p14', 'p45a', 'p53', 'p48a']]
 
-    pass
+    # Filter to the police vehicles only
+    data = data[data['p48a'].isin([12, 13])]
+
+    _most_crashed_police_vehicle(data)
+    _count_of_police_officers_under_the_influence(data)
+    _average_damages_caused_with_police_involved(data)
 
 
 if __name__ == '__main__':
-    # pd.options.display.float_format = '{:.2f}'.format
-
     df = prepare_data('accidents.pkl.gz')
     interesting_data_table(df)
-    # interesting_data_graph(df)
+    print()
+    interesting_data_graph(df)
+    print()
     interesting_data_stats(df)
