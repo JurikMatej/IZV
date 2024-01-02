@@ -30,7 +30,7 @@ def interesting_data_table(df: pd.DataFrame):
 
     TODO docstring
     """
-    VEHICLE_OWNERS = {
+    vehicle_owners = {
         11: "Ministerstvo vnútra",
         12: "Polícia ČR",
         13: "Mestská, obecná polícia",
@@ -49,14 +49,15 @@ def interesting_data_table(df: pd.DataFrame):
     data['total'] = data['p1']  # Prepare the accident fraction column
     totals_table = data.groupby(['year']).agg({'total': 'count'})
 
-    data['p48a'] = data['p48a'].map(VEHICLE_OWNERS)
+    data['p48a'] = data['p48a'].map(vehicle_owners)
     data = data.groupby(['year', 'p48a']).agg({'p1': 'count'}).reset_index()
 
     data = totals_table.merge(data, on='year', how='outer')
 
     # Calculate the fraction of total accidents for different vehicle owner caused accidents
     data['%ofTotal'] = data['p1'] / data['total'] * 100
-    data['%ofTotal'] = [f"{x:.2f}\\%" for x in data['%ofTotal']]  # NOTE: the \\% escape is necessary for .tex compiler
+    # NOTE: the \\% escape is necessary for .tex compiler
+    data['%ofTotal'] = [f"{x:.2f}\\%" for x in data['%ofTotal']]
 
     # TABLE 1: Overview - Total numbers of per-year accidents caused by the police and government
     table_overview = data.groupby(['year']).agg({'total': 'first'})
@@ -65,7 +66,8 @@ def interesting_data_table(df: pd.DataFrame):
     table_overview.columns = ['Nehody celkom']
 
     # TABLE 2: Specifics
-    #          - Numbers and the fraction of total accidents per specific vehicle owner (police or gov) by year
+    #          - Numbers and the fraction of total accidents per specific vehicle owner
+    #            (police or gov) by year
     table_specific = data.groupby(['year', 'p48a']).agg({'p1': 'first', '%ofTotal': 'first'})
     # Rename the columns before exporting them as a table
     table_specific.index.names = FrozenList(['Rok', 'Majiteľ havarovaného vozidla'])
@@ -87,7 +89,7 @@ def interesting_data_graph(df: pd.DataFrame):
     TODO docstring
     TODO p10 = 1 => policajt zavinil nehodu
     """
-    ACCIDENT_TYPE = {
+    accident_type = {
         1: "Zrážka s idúcim nekoľajovým vozidlom",
         2: "Zrážka s vozidlom zaparkovaným/odstaveným",
         3: "Zrážka s pevnou prekážkou",
@@ -107,7 +109,7 @@ def interesting_data_graph(df: pd.DataFrame):
     data = data.dropna(subset=['p6'])
 
     # Map accident type categories to their string descriptions
-    data['p6'] = data['p6'].map(ACCIDENT_TYPE)
+    data['p6'] = data['p6'].map(accident_type)
     data.rename(columns={'p6': 'Typ nehody'}, inplace=True)
 
     # Filter out only the accidents caused by the police
@@ -135,7 +137,7 @@ def _most_crashed_police_vehicle(df: pd.DataFrame):
     """
     TODO docstring
     """
-    VEHICLES = {  # Vehicles without Buses and special types of vehicle (train, tractor etc.)
+    vehicles = {  # Vehicles without Buses and special types of vehicle (train, tractor etc.)
         1: "ALFA-ROMEO",
         2: "AUDI",
         3: "AVIA",
@@ -234,7 +236,7 @@ def _most_crashed_police_vehicle(df: pd.DataFrame):
     fact_data = fact_data[['p1', 'p45a']]
     # Filter out the buses and the 'none of these' field
     fact_data = fact_data[~fact_data['p45a'].isin([0, *list(range(72, 79))])]
-    fact_data['p45a'] = fact_data['p45a'].map(VEHICLES)
+    fact_data['p45a'] = fact_data['p45a'].map(vehicles)
 
     fact_data = fact_data.groupby(['p45a']).agg({'p1': 'count'}).reset_index()
     # print(fact1_data)
@@ -252,12 +254,13 @@ def _count_of_police_officers_under_the_influence(df: pd.DataFrame):
     fact_data = df.copy()
     fact_data = fact_data[['p1', 'p11']]
 
-    # Filter data to alcohol influence only
-    fact_data = fact_data[fact_data['p11'].isin([3, *list(range(5, 10))])]  # p11 = [3, 5..9] (p11=4 means use of drugs)
+    # Filter data to alcohol influence only -> p11=[3, 5..9] because p11=4 means use of drugs
+    fact_data = fact_data[fact_data['p11'].isin([3, *list(range(5, 10))])]
 
     the_count = fact_data['p1'].count()
 
-    print(f"Počet policajtov zúčastnených pri nehodách, ktorí boli pod vplyvom alkoholu: {the_count}")
+    print(f"Počet policajtov zúčastnených pri nehodách, ktorí boli pod vplyvom alkoholu: "
+          f"{the_count}")
 
 
 def _average_damages_caused_with_police_involved(df: pd.DataFrame):
@@ -272,7 +275,8 @@ def _average_damages_caused_with_police_involved(df: pd.DataFrame):
     the_total_damage = int(fact_data['p14'].mean().round(2) * 100)
 
     print(f"Priemerná škoda na policajnom aute: {the_vehicle_damage} czk")
-    print(f"Priemerná celková škoda spôsobená nehodou, na ktorej sa účastnil aj policajt: {the_total_damage} czk")
+    print(f"Priemerná celková škoda spôsobená nehodou, na ktorej sa účastnil aj policajt: "
+          f"{the_total_damage} czk")
 
 
 def interesting_data_stats(df: pd.DataFrame):
@@ -291,9 +295,9 @@ def interesting_data_stats(df: pd.DataFrame):
 
 
 if __name__ == '__main__':
-    df = prepare_data('accidents.pkl.gz')
-    interesting_data_table(df)
+    _df = prepare_data('accidents.pkl.gz')
+    interesting_data_table(_df)
     print()
-    interesting_data_graph(df)
+    interesting_data_graph(_df)
     print()
-    interesting_data_stats(df)
+    interesting_data_stats(_df)
