@@ -83,7 +83,7 @@ def interesting_data_table(df: pd.DataFrame, generate_latex: bool = False):
     #            (police or gov) by year
     table_specific = data.groupby(['year', 'p48a']).agg({'p1': 'first', '%ofTotal': 'first'})
     # Rename the columns before exporting them as a table
-    table_specific.index.names = FrozenList(['Rok', 'Nehody spôsobil'])
+    table_specific.index.names = FrozenList(['Rok', 'Nehody spôsobilo(a)'])
     table_specific.columns = ['Počet nehôd', 'Pomer k celku za rok']
 
     print("Tabuľky použité vo finálnej správe:")
@@ -92,8 +92,15 @@ def interesting_data_table(df: pd.DataFrame, generate_latex: bool = False):
 
     if generate_latex:
         # Generate source latex for the tables to be used in the doc.pdf
-        print(table_overview.to_latex())
-        print(table_specific.to_latex())
+        print(table_overview.to_latex(
+            position="htb",
+            label="tab:table1",
+            caption="Celkový počet nehôd vozidiel registrovaných pod skúmanou organizáciou"))
+        print(table_specific.to_latex(
+            position="htb",
+            label="tab:table2",
+            caption="Počet nehôd (uvedených vozidiel) kategoricky zoradený podľa skúmanej "
+                    "organizácie"))
 
 
 def interesting_data_graph(df: pd.DataFrame):
@@ -266,7 +273,7 @@ def _most_crashed_police_vehicle(df: pd.DataFrame):
     the_car = fact_data[fact_data['p1'] == fact_data['p1'].max()].iloc[0]['p45a']
     the_amount = fact_data['p1'].max()
 
-    print(f"Najbúranejšie policajné auto za posledné roky: {the_car} ({the_amount} havárií)")
+    print(f"Policajné auto s najvyšším počtom zaznamenaných havárií: {the_car} ({the_amount} havárií)")
 
 
 def _count_of_police_officers_under_the_influence(df: pd.DataFrame):
@@ -284,7 +291,7 @@ def _count_of_police_officers_under_the_influence(df: pd.DataFrame):
 
     the_count = fact_data['p1'].count()
 
-    print(f"Počet policajtov zúčastnených pri nehodách, ktorí boli pod vplyvom alkoholu: "
+    print(f"Počet policajtov, ktorí sa stali účastníkmi nehôd, pričom boli pod vplyvom alkoholu: "
           f"{the_count}")
 
 
@@ -303,9 +310,9 @@ def _average_damages_caused_with_police_involved(df: pd.DataFrame):
     the_vehicle_damage = int(fact_data['p53'].mean().round(2) * 100)
     the_total_damage = int(fact_data['p14'].mean().round(2) * 100)
 
-    print(f"Priemerná škoda na policajnom aute: {the_vehicle_damage} czk")
-    print(f"Priemerná celková škoda spôsobená nehodou, na ktorej sa účastnil aj policajt: "
-          f"{the_total_damage} czk")
+    print(f"Priemerná škoda na policajnom aute po havárií: {the_vehicle_damage} czk")
+    print(f"Priemerná celková škoda spôsobená nehodou, na ktorej sa zúčastnilo "
+          f"aj policajné vozidlo: {the_total_damage} czk")
 
 
 def interesting_data_stats(df: pd.DataFrame):
@@ -327,9 +334,16 @@ def interesting_data_stats(df: pd.DataFrame):
 
 
 if __name__ == '__main__':
+    generate_latex = False
     _df = prepare_data('accidents.pkl.gz')
-    interesting_data_table(_df, generate_latex=False)
-    print()
+
+    interesting_data_table(_df, generate_latex=generate_latex)
+
+    if not generate_latex:
+        print()  # Spacing
+
     interesting_data_graph(_df)
-    print()
+
+    print()  # Spacing
+
     interesting_data_stats(_df)
