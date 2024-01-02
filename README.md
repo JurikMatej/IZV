@@ -28,3 +28,6 @@ The assignment documents can be found in their respective `partXX` folder named 
 as `zadani.pdf` or `nehody-zadani.pdf`. 
 Please note that the assignment documents (handed out by the professor at BUT)
 are only available in the Czech language. 
+
+An Excel spreadsheet, that explains the dataset this project is working with
+can be found in the `docs/` folder.
