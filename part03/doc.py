@@ -26,8 +26,8 @@ def prepare_data(path_to_input: str) -> pd.DataFrame:
 
 def interesting_data_table(df: pd.DataFrame, generate_latex: bool = False):
     """
-    Create a table displaying the number of accidents that happened with
-    a police or other government member involved directly in it
+    Create a table displaying the number of accidents that were caused
+    by either police or other government member
 
     This report contains 2 tables:
         1. Total accident count across all years
@@ -48,18 +48,23 @@ def interesting_data_table(df: pd.DataFrame, generate_latex: bool = False):
     data = df.copy()
 
     # Filter out data not needed or empty
-    data = data[['p1', 'p48a', 'date']]
+    data = data[['p1', 'p10', 'p48a', 'date']]
     data = data.dropna(subset=['p48a'])
-    data = data[data['p48a'].isin([11, 12, 13, 15])]  # Filter out police and government vehicles
 
-    data['year'] = data['date'].dt.year
-
-    data['total'] = data['p1']  # Prepare the accident fraction column
-    totals_table = data.groupby(['year']).agg({'total': 'count'})
+    # Filter to only the accidents which involved the police or government vehicles
+    data = data[data['p48a'].isin([11, 12, 13, 15])]
+    # Filter to only the accidents that were caused by the police or the gov drivers
+    data = data[data['p10'] == 1]
 
     data['p48a'] = data['p48a'].map(vehicle_owners)
-    data = data.groupby(['year', 'p48a']).agg({'p1': 'count'}).reset_index()
 
+    # Create a column storing only the year of the accident
+    data['year'] = data['date'].dt.year
+
+    # Prepare the 'total accidents' column
+    data['total'] = data['p1']
+    totals_table = data.groupby(['year']).agg({'total': 'count'})
+    data = data.groupby(['year', 'p48a']).agg({'p1': 'count'}).reset_index()
     data = totals_table.merge(data, on='year', how='outer')
 
     # Calculate the fraction of total accidents for different vehicle owner caused accidents
@@ -78,8 +83,8 @@ def interesting_data_table(df: pd.DataFrame, generate_latex: bool = False):
     #            (police or gov) by year
     table_specific = data.groupby(['year', 'p48a']).agg({'p1': 'first', '%ofTotal': 'first'})
     # Rename the columns before exporting them as a table
-    table_specific.index.names = FrozenList(['Rok', 'Majiteľ havarovaného vozidla'])
-    table_specific.columns = ['Nehody podľa vozidla', 'Pomer k celku za rok']
+    table_specific.index.names = FrozenList(['Rok', 'Nehody spôsobil'])
+    table_specific.columns = ['Počet nehôd', 'Pomer k celku za rok']
 
     print("Tabuľky použité vo finálnej správe:")
     print(table_overview)
@@ -122,10 +127,10 @@ def interesting_data_graph(df: pd.DataFrame):
     data['p6'] = data['p6'].map(accident_type)
     data.rename(columns={'p6': 'Typ nehody'}, inplace=True)
 
-    # Filter out only the accidents which involved the police
+    # Filter to only the accidents which involved the police
     data = data[data['p48a'].isin([12, 13])]
 
-    # Filter out only the accidents that were caused by the police
+    # Filter to only the accidents that were caused by the police
     data = data[data['p10'] == 1]
 
     g = sns.displot(data,
@@ -323,8 +328,8 @@ def interesting_data_stats(df: pd.DataFrame):
 
 if __name__ == '__main__':
     _df = prepare_data('accidents.pkl.gz')
-    # interesting_data_table(_df, generate_latex=False)
-    # print()
+    interesting_data_table(_df, generate_latex=False)
+    print()
     interesting_data_graph(_df)
-    # print()
-    # interesting_data_stats(_df)
+    print()
+    interesting_data_stats(_df)
