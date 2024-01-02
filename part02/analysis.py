@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.11
 # coding=utf-8
+
 """
 IZV project part 2
 Author: xjurik12
@@ -7,32 +8,33 @@ Python version: 3.10
 """
 
 from io import BytesIO
+import zipfile
 
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 import pandas as pd
 import seaborn as sns
 import numpy as np
-import zipfile
 
 
-# Ukol 1: nacteni dat ze ZIP souboru
 def load_data(filename: str) -> pd.DataFrame:
     """
     Load data from a zip file into a pandas dataframe
-    The zip file must have a predetermined structure as per the ASSIGNMENT of this project - nested zip archives
-    with csv files with specific names encoded in cp1250
+    The zip file must have a predetermined structure as per the ASSIGNMENT
+    of this project - nested zip archives with csv files with specific names encoded in cp1250
 
     :param filename: Filename of the data to be loaded
-    :return: Pandas Dataframe containing the loaded csv data and an added column named 'region' with a specific
-    region's name abbreviation
+    :return: Pandas Dataframe containing the loaded csv data and an added column named 'region'
+    with a specific region's name abbreviation
     """
-    headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
-               "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27",
-               "p28",
-               "p34", "p35", "p39", "p44", "p45a", "p47", "p48a", "p49", "p50a", "p50b", "p51", "p52", "p53", "p55a",
-               "p57", "p58", "a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q", "r", "s", "t",
-               "p5a"]
+    headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6",
+               "p7", "p8", "p9", "p10", "p11", "p12", "p13a", "p13b",
+               "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20",
+               "p21", "p22", "p23", "p24", "p27", "p28", "p34", "p35",
+               "p39", "p44", "p45a", "p47", "p48a", "p49", "p50a", "p50b",
+               "p51", "p52", "p53", "p55a", "p57", "p58", "a", "b", "d",
+               "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q",
+               "r", "s", "t", "p5a"]
 
     regions = {
         "00": "PHA",
@@ -53,8 +55,8 @@ def load_data(filename: str) -> pd.DataFrame:
 
     df = pd.DataFrame()
 
-    # As per the assignment, datasource is a zipped archive of nested zipped archives containting csv files
-    # by which the data source will be populated
+    # As per the assignment, datasource is a zipped archive of nested zipped archives
+    # containing csv files by which the data source will be populated
     with zipfile.ZipFile(filename, "r") as data_archive:
         for nested_archive_name in data_archive.namelist():
             nested_archive_rawcontent = BytesIO(data_archive.read(nested_archive_name))
@@ -63,13 +65,19 @@ def load_data(filename: str) -> pd.DataFrame:
                 for csvfile_zipped_name in csv_archive.namelist():
 
                     # Check whether the filename equals one of the region codes
-                    current_region_code = csvfile_zipped_name.split('.')[0]  # File name without the extension (remove '.csv')
+
+                    # File name without the extension (remove '.csv')
+                    current_region_code = csvfile_zipped_name.split('.')[0]
                     if current_region_code in regions:
                         csvfile_rawcontent = BytesIO(csv_archive.read(csvfile_zipped_name))
 
                         # Create a dataframe with the csv file contents
-                        df_to_append = pd.read_csv(csvfile_rawcontent, dtype=np.string_, encoding="cp1250", sep=";",
-                                                   names=headers, low_memory=False)
+                        df_to_append = pd.read_csv(csvfile_rawcontent,
+                                                   dtype=np.string_,
+                                                   encoding="cp1250",
+                                                   sep=";",
+                                                   names=headers,
+                                                   low_memory=False)
                         # Add the region abbreviated name to the dataframe
                         df_to_append['region'] = regions[current_region_code]
 
@@ -79,7 +87,6 @@ def load_data(filename: str) -> pd.DataFrame:
     return df
 
 
-# Ukol 2: zpracovani dat
 def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     """
     Take the loaded dataframe and type cast its columns into desired types.
@@ -87,14 +94,16 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     Also remove duplicate entries marked by the p1 'Identification Numbers'.
 
     :param df: Loaded dataframe
-    :param verbose: Flag to make the function also report the original dataframe size, and it's size after parsing
+    :param verbose: Flag to make the function also report the original dataframe size,
+                    and it's size after parsing
+
     :return: Parsed data frame
     """
     df_to_format = df.copy()
 
     if verbose:
         size = np.sum(df_to_format.memory_usage(index=False, deep=True))
-        print("orig_size={:.1f} MB".format(size / 1_000_000))
+        print(f"orig_size={(size / 1_000_000):.1f} MB")
 
     # Store 'p2a' as a new datetime-typed column 'date'
     df_to_format["p2a"] = pd.to_datetime(df_to_format["p2a"])
@@ -125,25 +134,27 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
     if verbose:
         size = np.sum(df_to_format.memory_usage(index=False, deep=True))
-        print("new_size={:.1f} MB".format(size / 1_000_000))
+        print(f"new_size={(size / 1_000_000):.1f} MB")
 
     return df_to_format
 
 
-# Ukol 3: počty nehod oidke stavu řidiče
 def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     """
     Make a plot visualizing the state of the driver who caused an accident.
-    Each subplot represents a count of drivers for a specific driver state counted across different regions
+    Each subplot represents a count of drivers for a specific driver state counted across
+    different regions
 
     :param df: Parsed dataframe
-    :param fig_location: Path where to save the resulting figure. If set, save figure, else do not save
+    :param fig_location: Path where to save the resulting figure.
+                         If set, save figure, else do not save
     :param show_figure: Show the figure if true, else do not show
     """
 
     # Define an enumeration of the driver state indexes mapped to their textual description
-    # For a full overview, all the possible driver states are defined here, but some are commented out
-    # because only states with index 4 and above are being analysed
+    # For a full overview, all the possible driver states are defined here,
+    # but some are commented out because only states with index 4 and above are being analysed
+    # as per the ASSIGNMENT
     driver_states = {
         # 1: 'dobrý',
         # 2: 'unaven, usnul, náhlá fyzická indispozice',
@@ -197,7 +208,7 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         plt.show()
 
     if fig_location:
-        plt.savefig(fig_location)
+        graphs.savefig(fig_location)
 
     plt.close()
 
@@ -205,13 +216,15 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
 # Ukol4: alkohol v jednotlivých hodinách
 def plot_alcohol(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     """
-    Make a plot visualizing how many accidents are caused by drivers who have drunk alcohol, and how many are caused by
-    drivers who have not drunk any alcohol
-    Data is limited to 4 arbitrarily selected regions and shows sums of drivers (under the influence or sober) who
-    caused an accident during a day (0-23 hours)
+    Make a plot visualizing how many accidents are caused by drivers who have drunk alcohol,
+    and how many are caused by drivers who have not drunk any alcohol
+
+    Data is limited to 4 arbitrarily selected regions and shows sums of drivers
+    (under the influence or sober) who caused an accident during a day (0-23 hours)
 
     :param df: Parsed dataframe
-    :param fig_location: Path where to save the resulting figure. If set, save figure, else do not save
+    :param fig_location: Path where to save the resulting figure.
+                         If set, save figure, else do not save
     :param show_figure: Show the figure if true, else do not show
     """
     # Make a copy of the passed dataset to work on
@@ -228,7 +241,9 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None, show_figure: bool =
     data = data[data['p11'] != 0]
 
     # Distinguish alcohol use in a new category column 'alcohol'
-    # NOTE to the reviewer: p11=1 means ALCOHOL=YES, but ACCORDING TO THE ASSIGNMENT, it is treated as ALCOHOL=NO here
+    # NOTE to the reviewer:
+    #   p11=1 means ALCOHOL=YES,
+    #   but ACCORDING to the ASSIGNMENT, it is treated as ALCOHOL=NO here
     data.loc[data['p11'] < 3, 'alcohol'] = "Ne"
     data.loc[data['p11'] >= 3, 'alcohol'] = "Ano"
 
@@ -236,7 +251,8 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None, show_figure: bool =
     data['p2b'] = [x[:2] if x[:2] not in ['24', '25'] else None for x in data['p2b']]
     data['p2b'] = data['p2b'].dropna()
 
-    # Group data by region, time of day and alcohol use and add the number of accidents to each group
+    # Group data by region, time of day and alcohol use and add
+    # the number of accidents to each group
     data = data.groupby(['region', 'p2b', 'alcohol']).agg({'p11': 'count'}).reset_index()
 
     # Make a barplot for the resulting dataset
@@ -262,7 +278,7 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None, show_figure: bool =
     graphs.fig.subplots_adjust(hspace=0.4, wspace=0.2)
 
     if fig_location:
-        plt.savefig(fig_location)
+        graphs.savefig(fig_location)
 
     if show_figure:
         plt.show()
@@ -274,11 +290,12 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None, show_figure: bool =
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     """
     Makes a plot visualising four of the various causes for an accident.
-    Data is limited to 4 arbitrarily picked regions and shows counts of each accident cause type for the last 7 years
-    across those regions.
+    Data is limited to 4 arbitrarily picked regions and shows counts of each
+    accident cause type for the last 7 years across those regions.
 
     :param df: Parsed dataframe
-    :param fig_location: Path where to save the resulting figure. If set, save figure, else do not save
+    :param fig_location: Path where to save the resulting figure.
+                         If set, save figure, else do not save
     :param show_figure: Show the figure if true, else do not show
     """
     # Make a copy of the passed dataset to work on
@@ -307,7 +324,10 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     # Pivot relevant data (count occurrences of each caused accident by its causes)
     data = pd.pivot_table(data,
                           index=["region", "date"],
-                          values=['Zvířetem', 'Řidičem motorového vozidla', 'Řidičem nemotorového vozidla', 'Chodcem'],
+                          values=['Zvířetem',
+                                  'Řidičem motorového vozidla',
+                                  'Řidičem nemotorového vozidla',
+                                  'Chodcem'],
                           aggfunc="count")
 
     # Resample dates by months and stack the data
@@ -344,7 +364,7 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         ax.xaxis.set_major_formatter(fmt)
 
     if fig_location:
-        plt.savefig(fig_location)
+        graphs.savefig(fig_location)
 
     if show_figure:
         plt.show()
@@ -353,9 +373,9 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
 
 
 if __name__ == "__main__":
-    df = load_data("data/data.zip")
-    df2 = parse_data(df, True)
+    _df = load_data("data/data.zip")
+    _df2 = parse_data(_df, True)
 
-    plot_state(df2, "01_state.png")
-    plot_alcohol(df2, "02_alcohol.png")
-    plot_fault(df2, "03_fault.png")
+    plot_state(_df2, "01_state.png")
+    plot_alcohol(_df2, "02_alcohol.png")
+    plot_fault(_df2, "03_fault.png")
