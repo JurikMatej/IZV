@@ -17,18 +17,26 @@ GRAPH_OUTPUT_FILE = "fig.png"
 
 def prepare_data(path_to_input: str) -> pd.DataFrame:
     """
-    Read prepared data from the provided path and prepare it for processing
+    Read prepared data from the provided path and parse it for processing
 
     :param path_to_input: path to prepared data (pickle-dumped dataframe)
     """
     return pd.read_pickle(path_to_input)
 
 
-def interesting_data_table(df: pd.DataFrame):
+def interesting_data_table(df: pd.DataFrame, generate_latex: bool = False):
     """
-    Nehody policajtov a ministerstva vnutra v porovnani s celkovymi nehodami
+    Create a table displaying the number of accidents that happened with
+    a police or other government member involved directly in it
 
-    TODO docstring
+    This report contains 2 tables:
+        1. Total accident count across all years
+        2. Specific accident type counts across all years
+
+    :param df: Source dataframe prepared by prepare_data()
+    :param generate_latex: If true, export the table in .tex format
+                           (must be selected and copied from the standard output,
+                           because STDOUT is already in use as per the assignment)
     """
     vehicle_owners = {
         11: "Ministerstvo vnútra",
@@ -42,7 +50,7 @@ def interesting_data_table(df: pd.DataFrame):
     # Filter out data not needed or empty
     data = data[['p1', 'p48a', 'date']]
     data = data.dropna(subset=['p48a'])
-    data = data[data['p48a'].isin([11, 12, 13, 15])]  # Filter out the police and government vehicles
+    data = data[data['p48a'].isin([11, 12, 13, 15])]  # Filter out police and government vehicles
 
     data['year'] = data['date'].dt.year
 
@@ -77,16 +85,19 @@ def interesting_data_table(df: pd.DataFrame):
     print(table_overview)
     print(table_specific)
 
-    # Generate source latex for the tables to be used in the doc.pdf
-    # print(table_overview.to_latex())
-    # print(table_specific.to_latex())
+    if generate_latex:
+        # Generate source latex for the tables to be used in the doc.pdf
+        print(table_overview.to_latex())
+        print(table_specific.to_latex())
 
 
 def interesting_data_graph(df: pd.DataFrame):
     """
-    Do coho policajti radi buraju
+    Generate a histogram displaying what the police crashes into the most
+    and save it in the pre-configured format (see GRAPH_OUTPUT_FILE)
 
-    TODO docstring
+    :param df: Source dataframe prepared by prepare_data()
+
     TODO p10 = 1 => policajt zavinil nehodu
     """
     accident_type = {
@@ -135,7 +146,9 @@ def interesting_data_graph(df: pd.DataFrame):
 
 def _most_crashed_police_vehicle(df: pd.DataFrame):
     """
-    TODO docstring
+    Display the most crashed police vehicle based on the data
+
+    :param df: Source data filtered to only the police owned vehicles in Czech Republic
     """
     vehicles = {  # Vehicles without Buses and special types of vehicle (train, tractor etc.)
         1: "ALFA-ROMEO",
@@ -249,7 +262,10 @@ def _most_crashed_police_vehicle(df: pd.DataFrame):
 
 def _count_of_police_officers_under_the_influence(df: pd.DataFrame):
     """
-    TODO docstring
+    Display the number of police members that were a part of an accident
+    while under the influence of alcohol
+
+    :param df: Source data filtered to only the police owned vehicles in Czech Republic
     """
     fact_data = df.copy()
     fact_data = fact_data[['p1', 'p11']]
@@ -265,7 +281,11 @@ def _count_of_police_officers_under_the_influence(df: pd.DataFrame):
 
 def _average_damages_caused_with_police_involved(df: pd.DataFrame):
     """
-    TODO docstring
+    Display the average damages caused to:
+        1. The police cars involved in an accident (damage only to car itself)
+        2. The total infrastructure involved (the average of total damages caused)
+
+    :param df: Source data filtered to only the police owned vehicles in Czech Republic
     """
     fact_data = df.copy()
     fact_data = fact_data[['p1', 'p53', 'p14']]
@@ -281,7 +301,10 @@ def _average_damages_caused_with_police_involved(df: pd.DataFrame):
 
 def interesting_data_stats(df: pd.DataFrame):
     """
-    TODO docstring
+    Display any additional interesting stats found in the data
+    that are relevant to the generated table and graph
+
+    :param df: Source dataframe prepared by prepare_data()
     """
     data = df.copy()
     data = data[['p1', 'p11', 'p14', 'p45a', 'p53', 'p48a']]
@@ -296,7 +319,7 @@ def interesting_data_stats(df: pd.DataFrame):
 
 if __name__ == '__main__':
     _df = prepare_data('accidents.pkl.gz')
-    interesting_data_table(_df)
+    interesting_data_table(_df, generate_latex=False)
     print()
     interesting_data_graph(_df)
     print()
