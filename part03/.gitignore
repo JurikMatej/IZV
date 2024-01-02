@@ -6,4 +6,6 @@ __pycache__
 .pytest_cache
 pyvenv.cfg
 interactive*
+doc/*
+!doc/doc.pdf
 venv
