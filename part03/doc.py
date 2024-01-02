@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from pandas.core.indexes.frozen import FrozenList
 
 
 def prepare_data(path_to_input: str) -> pd.DataFrame:
@@ -31,15 +32,57 @@ def interesting_data_table(df: pd.DataFrame):
     """
     Nehody policajtov a ministerstva vnutra v porovnani s celkovymi nehodami
 
-    p48a
-    ----
-    11 - ministerstvo vnitra
-    12 - policie ČR
-    13 - městská, obecní policie
-    15 - ministerstvo obrany
-
+    TODO docstring
     """
+
+    VEHICLE_OWNERS = {
+        11: "Ministerstvo vnútra",
+        12: "Polícia ČR",
+        13: "Mestská, obecná polícia",
+        15: "Ministerstvo obrany",
+    }
+
     data = df.copy()
+
+    # Filter out data not needed or empty
+    data = data[['p1', 'p48a', 'date']]
+    data = data.dropna(subset=['p48a'])
+    data = data[data['p48a'].isin([11, 12, 13, 15])]  # Filter out the police and government vehicles
+
+    data['year'] = data['date'].dt.year
+
+    data['total'] = data['p1']  # Prepare the accident fraction column
+    totals_table = data.groupby(['year']).agg({'total': 'count'})
+
+    data['p48a'] = data['p48a'].map(VEHICLE_OWNERS)
+    data = data.groupby(['year', 'p48a']).agg({'p1': 'count'}).reset_index()
+
+    data = totals_table.merge(data, on='year', how='outer')
+
+    # Calculate the fraction of total accidents for different vehicle owner caused accidents
+    data['%ofTotal'] = data['p1'] / data['total'] * 100
+    data['%ofTotal'] = [f"{x:.2f}\\%" for x in data['%ofTotal']]  # NOTE: the \\% escape is necessary for .tex compiler
+
+    # TABLE 1: Overview - Total numbers of per-year accidents caused by the police and government
+    table_overview = data.groupby(['year']).agg({'total': 'first'})
+    # Rename the columns before exporting them as a table
+    table_overview.index.names = FrozenList(['Rok'])
+    table_overview.columns = ['Nehody celkom']
+
+    # TABLE 2: Specifics
+    #          - Numbers and the fraction of total accidents per specific vehicle owner (police or gov) by year
+    table_specific = data.groupby(['year', 'p48a']).agg({'p1': 'first', '%ofTotal': 'first'})
+    # Rename the columns before exporting them as a table
+    table_specific.index.names = FrozenList(['Rok', 'Majiteľ havarovaného vozidla'])
+    table_specific.columns = ['Nehody podľa vozidla', 'Pomer k celku za rok']
+
+    print("Tables used in the final report: ")
+    print(table_overview)
+    print(table_specific)
+
+    # Generate source latex for the tables to be used in the doc.pdf
+    # print(table_overview.to_latex())
+    # print(table_specific.to_latex())
 
 
 def interesting_data_graph(df: pd.DataFrame):
@@ -136,7 +179,9 @@ def interesting_data_stats(df: pd.DataFrame):
 
 
 if __name__ == '__main__':
+    # pd.options.display.float_format = '{:.2f}'.format
+
     df = prepare_data('accidents.pkl.gz')
     interesting_data_table(df)
-    interesting_data_graph(df)
+    # interesting_data_graph(df)
     interesting_data_stats(df)
